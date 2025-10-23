@@ -29,16 +29,27 @@ public class GameServer extends WebSocketServer {
     @Override
     public void onMessage(WebSocket conn, String message) {
         //System.out.println(message);
+        char mti = message.charAt(0);
+        String data = message.substring(1);
 
-        String[] clientdata = message.split("\\$");
-        if(playerids.contains(clientdata[0])){
-            playerdata.set(playerids.indexOf(clientdata[0]), message);
+        //message is a PlayerData call
+        if (mti == '1') {
+            String[] clientdata = data.split(":");
+            if (playerids.contains(clientdata[0])) {
+                playerdata.set(playerids.indexOf(clientdata[0]), data);
+            } else {
+                playerdata.add(data);
+                playerids.add(clientdata[0]);
+            }
+            conn.send(String.join("§", playerdata));
+
+        //message is a CastMagic call
+        } else if (mti == '2') {
+            //do nothing, yet
         }
         else{
-            playerdata.add(message);
-            playerids.add(clientdata[0]);
+            System.out.println("Received message with invalid MTI, call ignored");
         }
-        conn.send(String.join("&", playerdata));
     }
 
     @Override

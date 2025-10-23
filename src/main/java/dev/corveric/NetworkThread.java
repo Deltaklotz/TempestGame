@@ -26,8 +26,8 @@ public class NetworkThread extends WebSocketClient {
                     if (Main.instance != null) {
                         Vector3f pos = Main.instance.getPlayerPosition();
                         float rotY = Main.instance.getPlayerRotationY();
-                        String coord = Main.clientID + "$" + rotY + "§" + pos.x + "§" + pos.y + "§" + pos.z;
-                        send(coord); // this is WebSocketClient.send(...)
+                        String playerData = "1" + Main.clientID + ":" + rotY + ";" + pos.x + ";" + pos.y + ";" + pos.z;
+                        send(playerData); // this is WebSocketClient.send(...)
                     }
                     Thread.sleep(33); // 10 per second
                 } catch (Exception e) {
@@ -42,9 +42,9 @@ public class NetworkThread extends WebSocketClient {
     @Override
     public void onMessage(String message) {
         // same parsing logic you had
-        String[] players = message.split("&");
+        String[] players = message.split("§");
         for (String player : players) {
-            String[] parts = player.split("\\$");
+            String[] parts = player.split(":");
             if (parts.length == 2) {
                 String name = parts[0];
                 String data = parts[1];

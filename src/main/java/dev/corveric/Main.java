@@ -4,6 +4,7 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
@@ -13,6 +14,7 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
+import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
@@ -63,8 +65,8 @@ public class Main extends SimpleApplication {
         String s = scanner.nextLine();
         useInstancing = !s.equalsIgnoreCase("no");
 
-        NetworkThread client = new NetworkThread(serverAdress, 777);
-        client.connect();
+        NetworkThread server = new NetworkThread(serverAdress, 777);
+        server.connect();
 
         Main app = new Main();
         AppSettings settings = new AppSettings(true);
@@ -109,7 +111,7 @@ public class Main extends SimpleApplication {
 
         // Physics
         bulletAppState = new BulletAppState();
-        //bulletAppState.setDebugEnabled(true);
+        bulletAppState.setDebugEnabled(true);
         stateManager.attach(bulletAppState);
 
         //Lighting
@@ -129,6 +131,19 @@ public class Main extends SimpleApplication {
 
         //Sky
         viewPort.setBackgroundColor(ColorRGBA.fromRGBA255(64, 223, 255, 255));
+
+        //Level Initialization
+        Spatial level = assetManager.loadModel("/models/test_level/test_level.obj");
+        level.setLocalScale(3f);
+        level.setShadowMode(RenderQueue.ShadowMode.Receive);
+        rootNode.attachChild(level);
+
+        //Level Physics
+        RigidBodyControl levelPhys = new RigidBodyControl(0.0f); // static
+        level.addControl(levelPhys);
+        bulletAppState.getPhysicsSpace().add(levelPhys);
+
+
 
         // Character (first-person)
         CapsuleCollisionShape capsule = new CapsuleCollisionShape(1f, 2f);
