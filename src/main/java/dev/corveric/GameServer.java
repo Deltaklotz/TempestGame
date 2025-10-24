@@ -41,11 +41,11 @@ public class GameServer extends WebSocketServer {
                 playerdata.add(data);
                 playerids.add(clientdata[0]);
             }
-            conn.send(String.join("§", playerdata));
+            conn.send("1" + String.join("§", playerdata));
 
         //message is a CastMagic call
         } else if (mti == '2') {
-            //do nothing, yet
+            broadcast("2" + data);
         }
         else{
             System.out.println("Received message with invalid MTI, call ignored");
@@ -65,4 +65,5 @@ public class GameServer extends WebSocketServer {
     public static void main(String[] args) {
         new GameServer(777).start();
     }
+
 }
