@@ -275,8 +275,6 @@ public class Main extends SimpleApplication {
                         hat_mat.setColor("Ambient", ColorRGBA.fromRGBA255(22, 8, 0,255));
                         hat_mat.setBoolean("UseMaterialColors", true);
                         face_mat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
-
-                        System.out.println(geom.getName());
                         if(geom.getName().equals("Cube.003_0")){
                             geom.setMaterial(jacket_mat);
                         }
