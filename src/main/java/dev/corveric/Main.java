@@ -1,6 +1,8 @@
 package dev.corveric;
 
+import com.jme3.anim.AnimComposer;
 import com.jme3.app.SimpleApplication;
+import com.jme3.asset.TextureKey;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
@@ -10,16 +12,19 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
-import com.jme3.math.ColorRGBA;
-import com.jme3.math.FastMath;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Vector3f;
+import com.jme3.material.Material;
+import com.jme3.material.RenderState;
+import com.jme3.math.*;
 import com.jme3.renderer.queue.RenderQueue;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
+import com.jme3.scene.VertexBuffer;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
+import com.jme3.texture.Texture;
 
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Scanner;
 
@@ -35,6 +40,8 @@ public class Main extends SimpleApplication {
 
     public static Hashtable<String, Node> playerEntities = new Hashtable<>();
     public static Hashtable<String, String> playerData = new Hashtable<>();
+    public static String animState = "1"; //1 = idle; 2 = walk
+
     public static Spatial hand;
     private static Vector3f handOffset;
     private static Node handNode;
@@ -106,13 +113,26 @@ public class Main extends SimpleApplication {
         return pitch * FastMath.RAD_TO_DEG;
     }
 
+    public int getTextureIndex(String username){
+        int sum = 0;
+        for (char c : username.toCharArray()){
+            sum += (int) c;
+        }
+
+        int firstDigit = Integer.toString(sum).charAt(0) - '0';
+        return firstDigit;
+    }
+
     public void simpleInitApp(){
         instance = this;
 
         // Physics
         bulletAppState = new BulletAppState();
-        bulletAppState.setDebugEnabled(true);
+        //bulletAppState.setDebugEnabled(true);
         stateManager.attach(bulletAppState);
+
+        //test data for testing entity creation
+        playerData.put("heimat0729", "130;5;2;5;3");
 
         //Lighting
         DirectionalLight sun = new DirectionalLight();
@@ -195,12 +215,101 @@ public class Main extends SimpleApplication {
         if (forward) walkDirection.addLocal(cam.getDirection());
         if (backward) walkDirection.addLocal(cam.getDirection().negate());
 
+        if (walkDirection.lengthSquared() > 0.0001f) animState = "2";
+        else animState = "1";
+
         walkDirection.y = 0; // keep horizontal
         player.setWalkDirection(walkDirection.mult(0.25f));
         player.setJumpSpeed(12f); // lower jump
         player.setFallSpeed(30f);
         player.setGravity(30f);
         cam.setLocation(player.getPhysicsLocation().add(0, 1.5f, 0));
+
+
+        Enumeration<String> playerNames = playerData.keys();
+        while (playerNames.hasMoreElements()) {
+            String PName = playerNames.nextElement();
+            if(playerEntities.containsKey(PName)){
+                String[] playerArray = playerData.get(PName).split(";");
+                playerEntities.get(PName).setLocalTranslation(new Vector3f(Float.parseFloat(playerArray[1]), Float.parseFloat(playerArray[2]), Float.parseFloat(playerArray[3])));
+                playerEntities.get(PName).setLocalRotation(RotationUtil.fromDegrees(0f, Float.parseFloat(playerArray[0]), 0f));
+                AnimComposer comp = ((Node) playerEntities.get(PName)).getChild("Armature").getControl(AnimComposer.class);
+                if(playerArray[4].equals("1") && comp.getCurrentAction(AnimComposer.DEFAULT_LAYER) != comp.action("idle")) {
+                    comp.setCurrentAction("idle", AnimComposer.DEFAULT_LAYER, true);
+                }
+                else if (playerArray[4].equals("2") && comp.getCurrentAction(AnimComposer.DEFAULT_LAYER) != comp.action("run")) {
+                    comp.setCurrentAction("run", AnimComposer.DEFAULT_LAYER, true);
+                }
+            }
+            else{
+                Spatial newP = assetManager.loadModel("models/player/player.glb");
+                newP.updateModelBound();             // recalculates mesh bounds
+                newP.setCullHint(Spatial.CullHint.Never);
+
+                newP.depthFirstTraversal(spatial -> {
+                    if (spatial instanceof Geometry geom) {
+                        Material body_mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
+                        Material jacket_mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
+                        Material hat_mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
+                        Material face_mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
+                        Texture jacket_tex = assetManager.loadTexture(new TextureKey("models/player/player_jacket.png", false));
+                        Texture face_tex = assetManager.loadTexture(new TextureKey("models/player/player_face.png", false));
+                        jacket_mat.setTexture("DiffuseMap", jacket_tex);
+                        jacket_mat.getAdditionalRenderState().setFaceCullMode(RenderState.FaceCullMode.Off);
+                        face_mat.setTexture("DiffuseMap", face_tex);
+                        ColorRGBA body_col = new ColorRGBA[]{
+                                ColorRGBA.fromRGBA255(255, 41, 41, 255),
+                                ColorRGBA.fromRGBA255(41, 87, 255, 255),
+                                ColorRGBA.fromRGBA255(41, 255, 80, 255),
+                                ColorRGBA.fromRGBA255(255, 219, 41, 255),
+                                ColorRGBA.fromRGBA255(241, 41, 255, 255),
+                                ColorRGBA.fromRGBA255(41, 205, 255, 255),
+                                ColorRGBA.fromRGBA255(144, 41, 255, 255),
+                                ColorRGBA.fromRGBA255(200, 60, 0, 255),
+                                ColorRGBA.fromRGBA255(200,200,200, 255)
+                        }[getTextureIndex(PName)-1];
+                        body_mat.setColor("Diffuse", body_col);
+                        body_mat.setColor("Ambient", body_col);
+                        body_mat.setBoolean("UseMaterialColors", true);
+                        hat_mat.setColor("Diffuse", ColorRGBA.fromRGBA255(22, 8, 0, 255));
+                        hat_mat.setColor("Ambient", ColorRGBA.fromRGBA255(22, 8, 0,255));
+                        hat_mat.setBoolean("UseMaterialColors", true);
+                        face_mat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+
+                        System.out.println(geom.getName());
+                        if(geom.getName().equals("Cube.003_0")){
+                            geom.setMaterial(jacket_mat);
+                        }
+                        else if (geom.getName().equals("Cube.004_0")){
+                            geom.setMaterial(face_mat);
+                        }
+                        else if (geom.getName().equals("Circle.001_0")){
+                            geom.setMaterial(hat_mat);
+                        }
+                        else {geom.setMaterial(body_mat);}
+                    }
+                });
+
+                Node newPnode = new Node(PName);
+                newPnode.updateModelBound();
+                newPnode.setCullHint(Spatial.CullHint.Never);
+                newPnode.attachChild(newP);
+                CapsuleCollisionShape newC = new CapsuleCollisionShape(1f,2f);
+                RigidBodyControl newCTRL = new RigidBodyControl(newC, 0f);
+                newCTRL.setKinematic(true);
+                newPnode.addControl(newCTRL);
+                bulletAppState.getPhysicsSpace().add(newCTRL);
+                newP.setLocalTranslation(0,-5f,0);
+                newPnode.setLocalScale(0.4f);
+                TextUtil.addNameTag(newPnode, PName, assetManager);
+                newP.setShadowMode(RenderQueue.ShadowMode.Cast);
+                rootNode.attachChild(newPnode);
+                playerEntities.put(PName, newPnode);
+                ((Node) newP).getChild("Armature").getControl(AnimComposer.class).setCurrentAction("idle", AnimComposer.DEFAULT_LAYER, true);
+                ((Node) newP).getChild("Armature").getControl(AnimComposer.class).action("run").setSpeed(1.5f);
+            }
+        }
+
     }
 
     @Override

@@ -26,7 +26,7 @@ public class NetworkThread extends WebSocketClient {
                     if (Main.instance != null) {
                         Vector3f pos = Main.instance.getPlayerPosition();
                         float rotY = Main.instance.getPlayerRotationY();
-                        String playerData = "1" + Main.clientID + ":" + rotY + ";" + pos.x + ";" + pos.y + ";" + pos.z;
+                        String playerData = "1" + Main.clientID + ":" + rotY + ";" + pos.x + ";" + pos.y + ";" + pos.z + ";" + Main.animState;
                         send(playerData); // this is WebSocketClient.send(...)
                     }
                     Thread.sleep(33); // 10 per second
