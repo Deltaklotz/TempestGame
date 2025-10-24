@@ -24,6 +24,7 @@ import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Scanner;
@@ -40,6 +41,7 @@ public class Main extends SimpleApplication {
 
     public static Hashtable<String, Node> playerEntities = new Hashtable<>();
     public static Hashtable<String, String> playerData = new Hashtable<>();
+    public static ArrayList<Projectile> projectiles = new ArrayList<>();
     public static String animState = "1"; //1 = idle; 2 = walk
 
     public static Spatial hand;
@@ -132,7 +134,7 @@ public class Main extends SimpleApplication {
         stateManager.attach(bulletAppState);
 
         //test data for testing entity creation
-        playerData.put("heimat0729", "130;5;2;5;3");
+        playerData.put("batman007", "130;5;2;5;3");
 
         //Lighting
         DirectionalLight sun = new DirectionalLight();
@@ -306,6 +308,10 @@ public class Main extends SimpleApplication {
                 ((Node) newP).getChild("Armature").getControl(AnimComposer.class).setCurrentAction("idle", AnimComposer.DEFAULT_LAYER, true);
                 ((Node) newP).getChild("Armature").getControl(AnimComposer.class).action("run").setSpeed(1.5f);
             }
+        }
+
+        if(!projectiles.isEmpty()){
+            //process
         }
 
     }
