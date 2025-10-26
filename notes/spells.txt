@@ -1,4 +1,4 @@
-Basic Spell: plasma ball
+Basic Spell: plasmaball
     just a projectile that when spawned flies in one direction
     deals 10 damage when hit
 

@@ -23,6 +23,8 @@ import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import dev.corveric.spellObjects.Projectile;
+import dev.corveric.spellObjects.SpellUtil;
+import dev.corveric.spellObjects.Stationary;
 
 import java.util.*;
 
@@ -39,6 +41,10 @@ public class Main extends SimpleApplication {
     public static Hashtable<String, Node> playerEntities = new Hashtable<>();
     public static Hashtable<String, String> playerData = new Hashtable<>();
     public static ArrayList<Projectile> projectiles = new ArrayList<>();
+    public static ArrayList<Stationary> stationaries = new ArrayList<>();
+    public static ArrayList<String> selectableSpells;
+    public static ArrayList<Integer> spellInventory = new ArrayList<>(); //consists of indexes for spellList
+    public static int selectedInvSlot;
     public static String animState = "1"; //1 = idle; 2 = walk
 
     public static Spatial hand;
@@ -51,6 +57,12 @@ public class Main extends SimpleApplication {
     public static boolean useInstancing;
 
     public static void main(String[] args) throws Exception{
+        selectableSpells = new SpellUtil().getCastable();
+        spellInventory.add(0);
+        spellInventory.add(0);
+        spellInventory.add(0);
+        spellInventory.add(0);
+        spellInventory.add(0);
 
         //Logic for connecting to Server
         Scanner scanner = new Scanner(System.in);
@@ -124,9 +136,11 @@ public class Main extends SimpleApplication {
 
         //test data for testing entity creation
         playerData.put("batman007", "130;5;2;5;3");
-        Projectile p = new Projectile(assetManager, clientID,"plasma", new Vector3f(0,5,0), new Vector3f(90,0,0), 0.5f, 5f, 60f);
+        /*
+        Projectile p = new Projectile(assetManager, clientID,"plasmaball", new Vector3f(0,5,0), new Vector3f(90,0,0), 0f, 15f, 100f, 10f);
         projectiles.add(p);
         rootNode.attachChild(p);
+         */
 
         //Lighting
         DirectionalLight sun = new DirectionalLight();
@@ -308,12 +322,19 @@ public class Main extends SimpleApplication {
                 Projectile n = it.next();
                 n.updatePos(tpf);
                 if (!n.isAlive()) {
-                    if (n.getCaster().equals(clientID)){
-                        //server.send();
+                    if (n.getCaster().equals(clientID) && n.getType().equals("fireball")){
+                        server.send("2" + clientID + "§" + "firemolly§" + getPlayerPosition().x + ":" + getPlayerPosition().y + ":" + getPlayerPosition().z + ";");
                     }
                     n.removeFromParent();
                     it.remove();
                 }
+            }
+        }
+        if (!stationaries.isEmpty()) {
+            Iterator<Stationary> it = stationaries.iterator();
+            while (it.hasNext()) {
+                Stationary n = it.next();
+                    //do something
             }
         }
 

@@ -10,11 +10,11 @@ import com.jme3.scene.shape.Sphere;
 
 public class Projectile extends Node {
     private Vector3f velocity;
-    private float gravity, range;
+    private float gravity, range, damage;
     private String type, caster;
     private Vector3f position, origin;
 
-    public Projectile(AssetManager assetManager, String caster, String type, Vector3f origin, Vector3f direction, float gravity, float speed, float range) {
+    public Projectile(AssetManager assetManager, String caster, String type, Vector3f origin, Vector3f direction, float gravity, float speed, float range, float damage) {
         this.type = type;
         this.gravity = gravity;
         this.velocity = direction.normalize().mult(speed);
@@ -22,8 +22,9 @@ public class Projectile extends Node {
         this.origin = origin;
         this.range = range;
         this.caster = caster;
+        this.damage = damage;
 
-        if (type.equals("plasma")) {
+        if (type.equals("plasmaball")) {
             Geometry geom = new Geometry("plasma", new Sphere(8, 8, 0.2f));
             Material mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
             mat.setColor("Diffuse", ColorRGBA.Magenta);
@@ -57,11 +58,7 @@ public class Projectile extends Node {
         return true;
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public String getCaster(){
-        return caster;
-    }
+    public String getType() {return type;}
+    public float getDamage() {return damage;}
+    public String getCaster(){return caster;}
 }
