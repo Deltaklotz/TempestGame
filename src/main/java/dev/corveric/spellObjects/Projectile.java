@@ -14,7 +14,7 @@ public class Projectile extends Node {
     private String type, caster;
     private Vector3f position, origin;
 
-    public Projectile(AssetManager assetManager,, String caster, String type, Vector3f origin, Vector3f direction, float gravity, float speed, float range) {
+    public Projectile(AssetManager assetManager, String caster, String type, Vector3f origin, Vector3f direction, float gravity, float speed, float range) {
         this.type = type;
         this.gravity = gravity;
         this.velocity = direction.normalize().mult(speed);
