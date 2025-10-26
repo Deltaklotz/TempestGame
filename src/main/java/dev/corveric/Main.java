@@ -19,21 +19,18 @@ import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
-import com.jme3.scene.VertexBuffer;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
+import dev.corveric.spellObjects.Projectile;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Scanner;
+import java.util.*;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main extends SimpleApplication {
     public static Main instance; // static reference for networking thread
-
+    public static NetworkThread server;
     private BulletAppState bulletAppState;
     private CharacterControl player;
     private Vector3f walkDirection = new Vector3f();
@@ -74,7 +71,7 @@ public class Main extends SimpleApplication {
         String s = scanner.nextLine();
         useInstancing = !s.equalsIgnoreCase("no");
 
-        NetworkThread server = new NetworkThread(serverAdress, 777);
+        server = new NetworkThread(serverAdress, 777);
         server.connect();
 
         Main app = new Main();
@@ -94,25 +91,17 @@ public class Main extends SimpleApplication {
         return player.getPhysicsLocation().clone(); // clone to avoid threading issues
     }
 
-    public float getPlayerRotationY() {
+    public Vector3f getPlayerRotation() {
         if (player == null) {
-            return 0f;
+            return Vector3f.ZERO;
         }
 
         Quaternion camRot = cam.getRotation();
         float[] angles = camRot.toAngles(null); // returns [X, Y, Z] in radians
         float yaw = angles[1]; // Yaw around Y-axis in radians
-        return yaw * FastMath.RAD_TO_DEG;
-    }
-    public float getPlayerRotationX() {
-        if (player == null) {
-            return 0f;
-        }
-
-        Quaternion camRot = cam.getRotation();
-        float[] angles = camRot.toAngles(null); // returns [X, Y, Z] in radians
-        float pitch = angles[0]; // Yaw around Y-axis in radians
-        return pitch * FastMath.RAD_TO_DEG;
+        float pitch = angles[0]; // Yaw around X-axis in radians
+        float roll = angles[2];
+        return new Vector3f(pitch * FastMath.RAD_TO_DEG,yaw * FastMath.RAD_TO_DEG, roll * FastMath.RAD_TO_DEG);
     }
 
     public int getTextureIndex(String username){
@@ -135,6 +124,9 @@ public class Main extends SimpleApplication {
 
         //test data for testing entity creation
         playerData.put("batman007", "130;5;2;5;3");
+        Projectile p = new Projectile(assetManager, clientID,"plasma", new Vector3f(0,5,0), new Vector3f(90,0,0), 0.5f, 5f, 60f);
+        projectiles.add(p);
+        rootNode.attachChild(p);
 
         //Lighting
         DirectionalLight sun = new DirectionalLight();
@@ -310,9 +302,21 @@ public class Main extends SimpleApplication {
             }
         }
 
-        if(!projectiles.isEmpty()){
-            //process
+        if (!projectiles.isEmpty()) {
+            Iterator<Projectile> it = projectiles.iterator();
+            while (it.hasNext()) {
+                Projectile n = it.next();
+                n.updatePos(tpf);
+                if (!n.isAlive()) {
+                    if (n.getCaster().equals(clientID)){
+                        //server.send();
+                    }
+                    n.removeFromParent();
+                    it.remove();
+                }
+            }
         }
+
 
     }
 

@@ -1,12 +1,19 @@
-Basic Spell
+Basic Spell: plasma ball
     just a projectile that when spawned flies in one direction
     deals 10 damage when hit
+
 Fireball
     simple fireball, flies and when hits the ground makes an area of fire that damages
     simplest spell there is
     fire damage is 5dps
     if hit by ball directly damage is 30
-Money Rain (Japser)
+
+    Fireball is split into two spells, the projectile class ball that shoots from the caster
+    and upon the ball hitting the ground or flying further than a certain range, the ball gets removed
+    and to have the position of the more important burning area of the balls landing synced properly, the
+    Fireball Molly gets cast as a separate spell
+
+Money Rain (Jasper)
     summons a money rain above the caster
     heals 2hp per second
     heals everyone who stands beneath it
