@@ -7,6 +7,8 @@ import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.bullet.control.CharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
+import com.jme3.font.BitmapFont;
+import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
@@ -46,10 +48,12 @@ public class Main extends SimpleApplication {
     public static ArrayList<Integer> spellInventory = new ArrayList<>(); //consists of indexes for spellList
     public static int selectedInvSlot;
     public static String animState = "1"; //1 = idle; 2 = walk
+    public float Health = 100f;
+    public BitmapText HPtext;
 
     public static Spatial hand;
     private static Vector3f handOffset;
-    private static Node handNode;
+    private static Node GUINode = new Node("GUI");
     private static Node playerView;
 
     public static String serverAdress;
@@ -116,16 +120,6 @@ public class Main extends SimpleApplication {
         return new Vector3f(pitch * FastMath.RAD_TO_DEG,yaw * FastMath.RAD_TO_DEG, roll * FastMath.RAD_TO_DEG);
     }
 
-    public int getTextureIndex(String username){
-        int sum = 0;
-        for (char c : username.toCharArray()){
-            sum += (int) c;
-        }
-
-        int firstDigit = Integer.toString(sum).charAt(0) - '0';
-        return firstDigit;
-    }
-
     public void simpleInitApp(){
         instance = this;
 
@@ -179,6 +173,39 @@ public class Main extends SimpleApplication {
         player.setPhysicsLocation(new Vector3f(0, 2, 0));
         bulletAppState.getPhysicsSpace().add(player);
 
+        //GUI Layout with playerhand
+        playerView = new Node("PlayerView");
+        playerView.setLocalTranslation(new Vector3f(0, 1.5f, 0)); // camera height relative to player
+        rootNode.attachChild(playerView);
+        Spatial hand = assetManager.loadModel("models/player_hand/player_hand2.obj");
+        handOffset = new Vector3f(0.6f, -0.4f, -.75f);
+        cam.setFrustumPerspective(45, (float) cam.getWidth() / cam.getHeight(), 0.01f, 1000f);
+        hand.setLocalScale(.25f); // scale to match scene
+        Material handMat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
+        handMat.setColor("Diffuse", PlayerUtil.getPlayerColor(clientID));
+        handMat.setColor("Ambient", PlayerUtil.getPlayerColor(clientID));
+        handMat.setBoolean("UseMaterialColors", true);
+        rootNode.attachChild(hand);
+        GUINode.attachChild(hand);
+        hand.setLocalTranslation(handOffset);
+        playerView.attachChild(GUINode);
+        hand.setMaterial(handMat);
+
+        BitmapFont font = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        HPtext = new BitmapText(font);
+        HPtext.setText(String.valueOf(Health));
+        HPtext.setSize(0.05f); // scale text size
+        HPtext.setQueueBucket(RenderQueue.Bucket.Transparent); // render correctly
+        HPtext.setCullHint(Spatial.CullHint.Never);
+        HPtext.setLocalTranslation(-0.6f, 0.35f, -1f);
+        rootNode.attachChild(HPtext);
+        GUINode.attachChild(HPtext);
+
+        playerView.setLocalTranslation(player.getPhysicsLocation().add(0, 1.5f, 0)); // camera height
+        GUINode.setLocalRotation(RotationUtil.fromDegrees(-getPlayerRotation().x, getPlayerRotation().y+180, 0));
+
+
+
         // Camera
         flyCam.setMoveSpeed(1f);
         cam.setLocation(player.getPhysicsLocation());
@@ -216,6 +243,9 @@ public class Main extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf){
+        playerView.setLocalTranslation(player.getPhysicsLocation().add(0, 1.5f, 0)); // camera height
+        GUINode.setLocalRotation(RotationUtil.fromDegrees(-getPlayerRotation().x, getPlayerRotation().y+180, 0));
+        HPtext.setText(Integer.toString((int) Health));
 
         walkDirection.set(0, 0, 0);
         if (left) walkDirection.addLocal(cam.getLeft());
@@ -265,17 +295,7 @@ public class Main extends SimpleApplication {
                         jacket_mat.setTexture("DiffuseMap", jacket_tex);
                         jacket_mat.getAdditionalRenderState().setFaceCullMode(RenderState.FaceCullMode.Off);
                         face_mat.setTexture("DiffuseMap", face_tex);
-                        ColorRGBA body_col = new ColorRGBA[]{
-                                ColorRGBA.fromRGBA255(255, 41, 41, 255),
-                                ColorRGBA.fromRGBA255(41, 87, 255, 255),
-                                ColorRGBA.fromRGBA255(41, 255, 80, 255),
-                                ColorRGBA.fromRGBA255(255, 219, 41, 255),
-                                ColorRGBA.fromRGBA255(241, 41, 255, 255),
-                                ColorRGBA.fromRGBA255(41, 205, 255, 255),
-                                ColorRGBA.fromRGBA255(144, 41, 255, 255),
-                                ColorRGBA.fromRGBA255(200, 60, 0, 255),
-                                ColorRGBA.fromRGBA255(200,200,200, 255)
-                        }[getTextureIndex(PName)-1];
+                        ColorRGBA body_col = PlayerUtil.getPlayerColor(PName);
                         body_mat.setColor("Diffuse", body_col);
                         body_mat.setColor("Ambient", body_col);
                         body_mat.setBoolean("UseMaterialColors", true);
@@ -307,7 +327,7 @@ public class Main extends SimpleApplication {
                 bulletAppState.getPhysicsSpace().add(newCTRL);
                 newP.setLocalTranslation(0,-5f,0);
                 newPnode.setLocalScale(0.4f);
-                TextUtil.addNameTag(newPnode, PName, assetManager);
+                PlayerUtil.addNameTag(newPnode, PName, assetManager);
                 newP.setShadowMode(RenderQueue.ShadowMode.Cast);
                 rootNode.attachChild(newPnode);
                 playerEntities.put(PName, newPnode);
