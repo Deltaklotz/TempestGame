@@ -2,3 +2,4 @@ clip camera vertical so you dont go around yourself
 add animations to the player hand
 create nice skybox (make it yourself)
 add death messages
+render GUI in front of everything

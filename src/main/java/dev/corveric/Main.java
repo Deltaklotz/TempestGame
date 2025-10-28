@@ -46,10 +46,12 @@ public class Main extends SimpleApplication {
     public static ArrayList<Stationary> stationaries = new ArrayList<>();
     public static ArrayList<String> selectableSpells;
     public static ArrayList<Integer> spellInventory = new ArrayList<>(); //consists of indexes for spellList
-    public static int selectedInvSlot;
+    public static ArrayList<Spatial> spellInvSpatials = new ArrayList<>();
+    public static int selectedInvSlot = 0;
     public static String animState = "1"; //1 = idle; 2 = walk
     public float Health = 100f;
     public BitmapText HPtext;
+    Spatial InvIndicator;
 
     public static Spatial hand;
     private static Vector3f handOffset;
@@ -62,7 +64,7 @@ public class Main extends SimpleApplication {
 
     public static void main(String[] args) throws Exception{
         selectableSpells = new SpellUtil().getCastable();
-        spellInventory.add(0);
+        spellInventory.add(1);
         spellInventory.add(0);
         spellInventory.add(0);
         spellInventory.add(0);
@@ -191,6 +193,27 @@ public class Main extends SimpleApplication {
         playerView.attachChild(GUINode);
         hand.setMaterial(handMat);
 
+        for (int i = 0; i < 5; i++){
+            Spatial nextSlot = assetManager.loadModel("models/InvCard/card.obj");
+            nextSlot.setQueueBucket(RenderQueue.Bucket.Transparent);
+            nextSlot.setLocalTranslation(-0.5f + i*0.15f, -0.3f, -1);
+            nextSlot.setLocalScale(0.067f);
+            rootNode.attachChild(nextSlot);
+            GUINode.attachChild(nextSlot);
+            spellInvSpatials.add(nextSlot);
+        }
+
+        InvIndicator = assetManager.loadModel("models/InvCard/card.obj");
+        Material invCardMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture invCardTex = assetManager.loadTexture("textures/spellcards/border.png");
+        invCardMat.setTexture("ColorMap", invCardTex);
+        invCardMat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        InvIndicator.setMaterial(invCardMat);
+        InvIndicator.setLocalScale(0.071f);
+        InvIndicator.setQueueBucket(RenderQueue.Bucket.Transparent);
+        rootNode.attachChild(InvIndicator);
+        GUINode.attachChild(InvIndicator);
+
         BitmapFont font = assetManager.loadFont("Interface/Fonts/Default.fnt");
         HPtext = new BitmapText(font);
         HPtext.setText(String.valueOf(Health));
@@ -200,9 +223,6 @@ public class Main extends SimpleApplication {
         HPtext.setLocalTranslation(-0.6f, 0.35f, -1f);
         rootNode.attachChild(HPtext);
         GUINode.attachChild(HPtext);
-
-        playerView.setLocalTranslation(player.getPhysicsLocation().add(0, 1.5f, 0)); // camera height
-        GUINode.setLocalRotation(RotationUtil.fromDegrees(-getPlayerRotation().x, getPlayerRotation().y+180, 0));
 
 
 
@@ -220,9 +240,14 @@ public class Main extends SimpleApplication {
         inputManager.addMapping("Forward",  new KeyTrigger(KeyInput.KEY_W));
         inputManager.addMapping("Backward", new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping("Jump",     new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addMapping("Num1", new KeyTrigger(KeyInput.KEY_1));
+        inputManager.addMapping("Num2", new KeyTrigger(KeyInput.KEY_2));
+        inputManager.addMapping("Num3", new KeyTrigger(KeyInput.KEY_3));
+        inputManager.addMapping("Num4", new KeyTrigger(KeyInput.KEY_4));
+        inputManager.addMapping("Num5", new KeyTrigger(KeyInput.KEY_5));
 
         inputManager.addListener(actionListener,
-                "Left", "Right", "Forward", "Backward", "Jump");
+                "Left", "Right", "Forward", "Backward", "Jump","Num1", "Num2", "Num3","Num4","Num5");
     }
 
     private final ActionListener actionListener = new ActionListener() {
@@ -237,6 +262,11 @@ public class Main extends SimpleApplication {
                         player.jump();
                     }
                     break;
+                case "Num1": selectedInvSlot = 0; break;
+                case "Num2": selectedInvSlot = 1; break;
+                case "Num3": selectedInvSlot = 2; break;
+                case "Num4": selectedInvSlot = 3; break;
+                case "Num5": selectedInvSlot = 4; break;
             }
         }
     };
@@ -245,7 +275,16 @@ public class Main extends SimpleApplication {
     public void simpleUpdate(float tpf){
         playerView.setLocalTranslation(player.getPhysicsLocation().add(0, 1.5f, 0)); // camera height
         GUINode.setLocalRotation(RotationUtil.fromDegrees(-getPlayerRotation().x, getPlayerRotation().y+180, 0));
-        HPtext.setText(Integer.toString((int) Health));
+        HPtext.setText((int) Health + "HP");
+        InvIndicator.setLocalTranslation(-0.505f + selectedInvSlot*0.1515f, -0.303f, -1.01f);
+
+        for (int i = 0; i < 5; i++){
+            Material slotMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            Texture slotTex = assetManager.loadTexture("textures/spellcards/"+ selectableSpells.get(spellInventory.get(i))+".png");
+            slotMat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+            slotMat.setTexture("ColorMap", slotTex);
+            spellInvSpatials.get(i).setMaterial(slotMat);
+        }
 
         walkDirection.set(0, 0, 0);
         if (left) walkDirection.addLocal(cam.getLeft());

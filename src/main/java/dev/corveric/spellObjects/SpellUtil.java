@@ -5,8 +5,9 @@ import java.util.ArrayList;
 public class SpellUtil {
     private ArrayList<String> spells = new ArrayList<>();
     public SpellUtil(){
+        spells.add("none");
         spells.add("plasmaball");
-        spells.add("fireball");
+        //spells.add("fireball");
     }
     public ArrayList<String> getCastable(){
         return spells;

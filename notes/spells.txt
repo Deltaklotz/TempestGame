@@ -12,9 +12,13 @@ Fireball
     and upon the ball hitting the ground or flying further than a certain range, the ball gets removed
     and to have the position of the more important burning area of the balls landing synced properly, the
     Fireball Molly gets cast as a separate spell
+    firemolly lasts for 10secs
 
 Money Rain (Jasper)
     summons a money rain above the caster
     heals 2hp per second
     heals everyone who stands beneath it
+
+Smoke
+    literally just a valorant smoke, lasts for 60secs
 
