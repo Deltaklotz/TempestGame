@@ -1,0 +1,23 @@
+# Blender 4.2.0 MTL File: 'None'
+# www.blender.org
+
+newmtl Bark_NormalTree
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 1
+map_Kd TreeBark_Base.png
+map_d C:/Bark_NormalTree.png
+map_Bump -bm 1.000000 TreeBark_Normal.png
+
+newmtl Leaves_Pine
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 1
+map_Kd Leaf_Pine.png
+map_d Leaf_Pine.png
