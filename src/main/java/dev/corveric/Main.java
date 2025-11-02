@@ -10,8 +10,11 @@ import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.font.BitmapFont;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
+import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.input.controls.MouseAxisTrigger;
+import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
@@ -51,7 +54,8 @@ public class Main extends SimpleApplication {
     public static String animState = "1"; //1 = idle; 2 = walk
     public float Health = 100f;
     public BitmapText HPtext;
-    Spatial InvIndicator;
+    public Spatial InvIndicator;
+    public Spatial Healthbar;
 
     public static Spatial hand;
     private static Vector3f handOffset;
@@ -131,7 +135,7 @@ public class Main extends SimpleApplication {
         stateManager.attach(bulletAppState);
 
         //test data for testing entity creation
-        playerData.put("batman007", "130;5;2;5;3");
+        playerData.put("batman007", "130;5;2;5;2");
         /*
         Projectile p = new Projectile(assetManager, clientID,"plasmaball", new Vector3f(0,5,0), new Vector3f(90,0,0), 0f, 15f, 100f, 10f);
         projectiles.add(p);
@@ -157,7 +161,7 @@ public class Main extends SimpleApplication {
         viewPort.setBackgroundColor(ColorRGBA.fromRGBA255(64, 223, 255, 255));
 
         //Level Initialization
-        Spatial level = assetManager.loadModel("/models/test_level/test_level.obj");
+        Spatial level = assetManager.loadModel("/models/test_map/map.obj");
         level.setLocalScale(3f);
         level.setShadowMode(RenderQueue.ShadowMode.Receive);
         rootNode.attachChild(level);
@@ -217,17 +221,30 @@ public class Main extends SimpleApplication {
         BitmapFont font = assetManager.loadFont("Interface/Fonts/Default.fnt");
         HPtext = new BitmapText(font);
         HPtext.setText(String.valueOf(Health));
-        HPtext.setSize(0.05f); // scale text size
+        HPtext.setSize(0.025f); // scale text size
         HPtext.setQueueBucket(RenderQueue.Bucket.Transparent); // render correctly
         HPtext.setCullHint(Spatial.CullHint.Never);
-        HPtext.setLocalTranslation(-0.6f, 0.35f, -1f);
+        HPtext.setLocalTranslation(-0.62f, 0.379f, -0.99f);
         rootNode.attachChild(HPtext);
         GUINode.attachChild(HPtext);
+
+        Healthbar = assetManager.loadModel("models/healthbar/health.obj");
+        Spatial healthgeom = assetManager.loadModel("models/healthbar/bar.obj");
+        rootNode.attachChild(healthgeom);
+        rootNode.attachChild(Healthbar);
+        Healthbar.setLocalTranslation(-0.63f, 0.367f, -1f);
+        healthgeom.setLocalTranslation(-0.63f, 0.367f, -1f);
+        Healthbar.setLocalScale(0.1f);
+        healthgeom.setLocalScale(0.1f);
+        GUINode.attachChild(Healthbar);
+        GUINode.attachChild(healthgeom);
+
 
 
 
         // Camera
         flyCam.setMoveSpeed(1f);
+        flyCam.setZoomSpeed(0);
         cam.setLocation(player.getPhysicsLocation());
 
         // Input
@@ -235,6 +252,11 @@ public class Main extends SimpleApplication {
     }
 
     private void initKeys() {
+        inputManager.deleteMapping("FLYCAM_ZoomIn");
+        inputManager.deleteMapping("FLYCAM_ZoomOut");
+
+        inputManager.addMapping("WheelUp", new MouseAxisTrigger(MouseInput.AXIS_WHEEL, false));
+        inputManager.addMapping("WheelDown", new MouseAxisTrigger(MouseInput.AXIS_WHEEL, true));
         inputManager.addMapping("Left",     new KeyTrigger(KeyInput.KEY_A));
         inputManager.addMapping("Right",    new KeyTrigger(KeyInput.KEY_D));
         inputManager.addMapping("Forward",  new KeyTrigger(KeyInput.KEY_W));
@@ -245,9 +267,11 @@ public class Main extends SimpleApplication {
         inputManager.addMapping("Num3", new KeyTrigger(KeyInput.KEY_3));
         inputManager.addMapping("Num4", new KeyTrigger(KeyInput.KEY_4));
         inputManager.addMapping("Num5", new KeyTrigger(KeyInput.KEY_5));
+        inputManager.addMapping("LeftClick",  new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
+        inputManager.addMapping("RightClick", new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
 
         inputManager.addListener(actionListener,
-                "Left", "Right", "Forward", "Backward", "Jump","Num1", "Num2", "Num3","Num4","Num5");
+                "Left", "Right", "Forward", "Backward", "Jump","Num1", "Num2", "Num3","Num4","Num5", "LeftClick", "RightClick", "WheelUp", "WheelDown");
     }
 
     private final ActionListener actionListener = new ActionListener() {
@@ -268,6 +292,19 @@ public class Main extends SimpleApplication {
                 case "Num4": selectedInvSlot = 3; break;
                 case "Num5": selectedInvSlot = 4; break;
             }
+            if (!isPressed) return;
+            if (binding.equals("LeftClick")) {
+                server.cast(selectableSpells.get(spellInventory.get(selectedInvSlot)));
+            } else if (binding.equals("RightClick")) {
+                System.out.println("Right click");
+            }
+            else if (binding.equals("WheelUp")) {
+                selectedInvSlot ++;
+                if (selectedInvSlot == 6){selectedInvSlot = 0;}
+            } else if (binding.equals("WheelDown")) {
+                selectedInvSlot --;
+                if (selectedInvSlot < 0){selectedInvSlot = 5;}
+            }
         }
     };
 
@@ -276,11 +313,12 @@ public class Main extends SimpleApplication {
         playerView.setLocalTranslation(player.getPhysicsLocation().add(0, 1.5f, 0)); // camera height
         GUINode.setLocalRotation(RotationUtil.fromDegrees(-getPlayerRotation().x, getPlayerRotation().y+180, 0));
         HPtext.setText((int) Health + "HP");
+        Healthbar.setLocalScale(Health/1000f,.1f,.1f);
         InvIndicator.setLocalTranslation(-0.505f + selectedInvSlot*0.1515f, -0.303f, -1.01f);
 
         for (int i = 0; i < 5; i++){
             Material slotMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-            Texture slotTex = assetManager.loadTexture("textures/spellcards/"+ selectableSpells.get(spellInventory.get(i))+".png");
+            Texture slotTex = assetManager.loadTexture("textures/spellicons/"+ selectableSpells.get(spellInventory.get(i))+".png");
             slotMat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
             slotMat.setTexture("ColorMap", slotTex);
             spellInvSpatials.get(i).setMaterial(slotMat);
@@ -301,6 +339,12 @@ public class Main extends SimpleApplication {
         player.setFallSpeed(30f);
         player.setGravity(30f);
         cam.setLocation(player.getPhysicsLocation().add(0, 1.5f, 0));
+
+        //Death
+        if (Health <= 0f){
+            Health = 100f;
+            player.setPhysicsLocation(new Vector3f(0f,2f,0f));
+        }
 
 
         Enumeration<String> playerNames = playerData.keys();
@@ -379,7 +423,14 @@ public class Main extends SimpleApplication {
             Iterator<Projectile> it = projectiles.iterator();
             while (it.hasNext()) {
                 Projectile n = it.next();
+                if (n.getParent() == null) {
+                    rootNode.attachChild(n);
+                }
                 n.updatePos(tpf);
+                if (n.getPosition().distance(new Vector3f(getPlayerPosition().x,getPlayerPosition().y+1.5f, getPlayerPosition().z)) < n.getHitRange() && !n.isHit()){
+                    Health -= n.getDamage();
+                    n.hit();
+                }
                 if (!n.isAlive()) {
                     if (n.getCaster().equals(clientID) && n.getType().equals("fireball")){
                         server.send("2" + clientID + "§" + "firemolly§" + getPlayerPosition().x + ":" + getPlayerPosition().y + ":" + getPlayerPosition().z + ";");
@@ -393,7 +444,9 @@ public class Main extends SimpleApplication {
             Iterator<Stationary> it = stationaries.iterator();
             while (it.hasNext()) {
                 Stationary n = it.next();
-                    //do something
+                if (n.getParent() == null){
+                    rootNode.attachChild(n);
+                }
             }
         }
 

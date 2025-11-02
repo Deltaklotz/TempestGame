@@ -17,6 +17,15 @@ public class NetworkThread extends WebSocketClient {
         super(new URI("ws://" + serverAddress + ":" + port));
     }
 
+    public void cast(String spell){
+        if(spell.equals("plasmaball")){
+            Vector3f origVec = Main.instance.getPlayerPosition();
+            origVec.y += 1.5f;
+            Vector3f dirVec = Main.instance.getPlayerRotation();
+            send("2"+Main.clientID+"§"+spell+"§"+origVec.x+":"+origVec.y+":"+origVec.z+";"+dirVec.x+":"+dirVec.y+":"+dirVec.z);
+        }
+    }
+
     @Override
     public void onOpen(ServerHandshake handshake) {
         System.out.println("Connected to server");
@@ -62,22 +71,20 @@ public class NetworkThread extends WebSocketClient {
         }
         else if (mti == '2'){
             String[] dataList = data.split("§");
-            String[] paramList = data.split(";");
+            String[] paramList = dataList[2].split(";");
             if (dataList[1].equals("plasmaball")){
                 String[] origVecParam = paramList[0].split(":");
                 String[] dirVecParam = paramList[1].split(":");
                 Vector3f origVec = new Vector3f(Float.parseFloat(origVecParam[0]), Float.parseFloat(origVecParam[1]), Float.parseFloat(origVecParam[2]));
-                Vector3f dirVec = new Vector3f(Float.parseFloat(dirVecParam[0]),Float.parseFloat(dirVecParam[1]),Float.parseFloat(dirVecParam[2]));
-                Projectile newPlas = new Projectile(Main.instance.getAssetManager(), dataList[0], "plasma", origVec, dirVec, 2f, 5f, 100f, 10f);
+                Vector3f dirVec = new Vector3f(Float.parseFloat(dirVecParam[0])+180f,Float.parseFloat(dirVecParam[1]),Float.parseFloat(dirVecParam[2]));
+                Projectile newPlas = new Projectile(Main.instance.getAssetManager(), dataList[0], "plasmaball", origVec, dirVec, 0f, 22f, 100f, 10f);
                 Main.projectiles.add(newPlas);
-                Main.instance.getRootNode().attachChild(newPlas);
             }
             else if (dataList[1].equals("firemolly")){
                 String[] posVecParam = paramList[0].split(":");
                 Vector3f posVec = new Vector3f(Float.parseFloat(posVecParam[0]), Float.parseFloat(posVecParam[1]), Float.parseFloat(posVecParam[2]));
                 Stationary newStat = new Stationary(Main.instance.getAssetManager(), "firemolly", posVec, 0f, 10f, 10f);
                 Main.stationaries.add(newStat);
-                Main.instance.getRootNode().attachChild(newStat);
             }
         }
     }

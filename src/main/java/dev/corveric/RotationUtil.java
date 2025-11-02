@@ -10,6 +10,7 @@ public class RotationUtil {
         float zRad = zDeg * FastMath.DEG_TO_RAD;
         return new Quaternion().fromAngles(xRad, yRad, zRad);
     }
+
     public static float mapRange(float value, float inMin, float inMax, float outMin, float outMax) {
         return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
     }

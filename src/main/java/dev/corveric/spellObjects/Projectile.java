@@ -3,35 +3,43 @@ package dev.corveric.spellObjects;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.shape.Sphere;
+import dev.corveric.RotationUtil;
 
 public class Projectile extends Node {
     private Vector3f velocity;
-    private float gravity, range, damage;
+    private float gravity, range, damage, hitrange;
     private String type, caster;
     private Vector3f position, origin;
+    private boolean hit;
 
     public Projectile(AssetManager assetManager, String caster, String type, Vector3f origin, Vector3f direction, float gravity, float speed, float range, float damage) {
         this.type = type;
         this.gravity = gravity;
-        this.velocity = direction.normalize().mult(speed);
+        Quaternion rot = RotationUtil.fromDegrees(direction.x,direction.y,direction.z);
+        Vector3f forward = rot.mult(Vector3f.UNIT_Z);
+        this.velocity = forward.mult(speed);
         this.position = origin.clone();
         this.origin = origin;
         this.range = range;
         this.caster = caster;
         this.damage = damage;
+        this.hit = false;
 
         if (type.equals("plasmaball")) {
-            Geometry geom = new Geometry("plasma", new Sphere(8, 8, 0.2f));
+            Geometry geom = new Geometry("plasma", new Sphere(8, 8, 0.5f));
             Material mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
             mat.setColor("Diffuse", ColorRGBA.Magenta);
             mat.setColor("Ambient", ColorRGBA.Magenta);
             mat.setBoolean("UseMaterialColors", true);
             geom.setMaterial(mat);
             attachChild(geom);
+            this.hitrange = 1.5f;
+            position.subtractLocal(velocity.mult(0.2f));
         }
         else{
             Geometry geom = new Geometry("fireball", new Sphere(8, 8, 0.2f));
@@ -41,14 +49,19 @@ public class Projectile extends Node {
             mat.setBoolean("UseMaterialColors", true);
             geom.setMaterial(mat);
             attachChild(geom);
+            this.hitrange = 1f;
         }
         setLocalTranslation(position);
     }
 
     public void updatePos(float tpf) {
         velocity.y -= gravity * tpf;       // apply gravity
-        position.addLocal(velocity.mult(tpf)); // move by velocity * delta time
+        position.subtractLocal(velocity.mult(tpf)); // move by velocity * delta time
         setLocalTranslation(position);
+    }
+
+    public void hit(){
+        hit = true;
     }
 
     public boolean isAlive() {
@@ -58,7 +71,11 @@ public class Projectile extends Node {
         return true;
     }
 
+    public boolean isHit(){return hit;}
     public String getType() {return type;}
     public float getDamage() {return damage;}
     public String getCaster(){return caster;}
+    public float getRange(){return range;}
+    public Vector3f getPosition(){return getLocalTranslation();}
+    public float getHitRange(){return hitrange;}
 }

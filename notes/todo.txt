@@ -3,3 +3,6 @@ add animations to the player hand
 create nice skybox (make it yourself)
 add death messages
 render GUI in front of everything
+add animation for removing cards
+just increase dstance to player when casting
+add mana
