@@ -1,27 +1,33 @@
 package dev.corveric.spellObjects;
 
 import com.jme3.asset.AssetManager;
+import com.jme3.collision.CollisionResult;
+import com.jme3.collision.CollisionResults;
 import com.jme3.material.Material;
+import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Quaternion;
+import com.jme3.math.Ray;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
+import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Sphere;
+import dev.corveric.Main;
 import dev.corveric.RotationUtil;
 
 public class Projectile extends Node {
     private Vector3f velocity;
-    private float gravity, range, damage, hitrange;
+    private float gravity, range, damage, hitrange, rotationSpeed;
     private String type, caster;
-    private Vector3f position, origin;
+    private Vector3f position, origin, forward;
     private boolean hit;
 
     public Projectile(AssetManager assetManager, String caster, String type, Vector3f origin, Vector3f direction, float gravity, float speed, float range, float damage) {
         this.type = type;
         this.gravity = gravity;
         Quaternion rot = RotationUtil.fromDegrees(direction.x,direction.y,direction.z);
-        Vector3f forward = rot.mult(Vector3f.UNIT_Z);
+        this.forward = rot.mult(Vector3f.UNIT_Z);
         this.velocity = forward.mult(speed);
         this.position = origin.clone();
         this.origin = origin;
@@ -31,33 +37,56 @@ public class Projectile extends Node {
         this.hit = false;
 
         if (type.equals("plasmaball")) {
-            Geometry geom = new Geometry("plasma", new Sphere(8, 8, 0.5f));
-            Material mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
-            mat.setColor("Diffuse", ColorRGBA.Magenta);
-            mat.setColor("Ambient", ColorRGBA.Magenta);
-            mat.setBoolean("UseMaterialColors", true);
-            geom.setMaterial(mat);
+            Spatial geom = assetManager.loadModel("/models/spells/plasmaball/plasmaball.obj");
+            geom.depthFirstTraversal(spatial -> {
+                if (spatial instanceof Geometry geo){
+                    //System.out.println(geo.getName());
+                    if (geo.getName().equals("plasmaball-geom-2")){
+                        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+                        mat.getAdditionalRenderState().setFaceCullMode(RenderState.FaceCullMode.Off);
+                        mat.setColor("Color", ColorRGBA.fromRGBA255(57,0,198,255));
+                        geo.setMaterial(mat);
+                    }
+                }
+            });
+            geom.setLocalScale(0.45f);
             attachChild(geom);
             this.hitrange = 1.5f;
+            this.rotationSpeed = 4f;
             position.subtractLocal(velocity.mult(0.2f));
         }
-        else{
-            Geometry geom = new Geometry("fireball", new Sphere(8, 8, 0.2f));
-            Material mat = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md");
-            mat.setColor("Diffuse", ColorRGBA.Orange);
-            mat.setColor("Ambient", ColorRGBA.Orange);
-            mat.setBoolean("UseMaterialColors", true);
-            geom.setMaterial(mat);
+        else if (type.equals("fireball")){
+            Spatial geom = assetManager.loadModel("models/spells/fireball/fireball.obj");
+            geom.setLocalScale(0.67f);
             attachChild(geom);
             this.hitrange = 1f;
+            this.rotationSpeed = 0f;
+            position.subtractLocal(velocity.mult(0.2f));
         }
         setLocalTranslation(position);
     }
 
     public void updatePos(float tpf) {
+        //gravity = gravity * 0.2f * gravity * tpf;
         velocity.y -= gravity * tpf;       // apply gravity
         position.subtractLocal(velocity.mult(tpf)); // move by velocity * delta time
         setLocalTranslation(position);
+        rotate(0, rotationSpeed * tpf, 0);
+
+        CollisionResults results = new CollisionResults();
+
+        Ray forwardRay = new Ray(this.position, this.forward.negate());
+        Ray downRay = new Ray(this.position, Vector3f.UNIT_Y.negate());
+        Main.instance.getRootNode().getChild("world").collideWith(forwardRay, results);
+        Main.instance.getRootNode().getChild("world").collideWith(downRay, results);
+
+        if (results.size() > 0) {
+            CollisionResult closest = results.getClosestCollision();
+            //System.out.println(closest.getDistance());
+            if (closest.getDistance() < 0.2f) {
+                this.hit = true;
+
+            }}
     }
 
     public void hit(){
@@ -65,7 +94,7 @@ public class Projectile extends Node {
     }
 
     public boolean isAlive() {
-        if (position.distance(origin) > range){
+        if (position.distance(origin) > range || this.hit){
             return false;
         }
         return true;

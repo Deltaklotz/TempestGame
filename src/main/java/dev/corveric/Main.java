@@ -56,6 +56,7 @@ public class Main extends SimpleApplication {
     public BitmapText HPtext;
     public Spatial InvIndicator;
     public Spatial Healthbar;
+    public Node worldNode;
 
     public static Spatial hand;
     private static Vector3f handOffset;
@@ -69,7 +70,7 @@ public class Main extends SimpleApplication {
     public static void main(String[] args) throws Exception{
         selectableSpells = new SpellUtil().getCastable();
         spellInventory.add(1);
-        spellInventory.add(0);
+        spellInventory.add(2);
         spellInventory.add(0);
         spellInventory.add(0);
         spellInventory.add(0);
@@ -79,6 +80,7 @@ public class Main extends SimpleApplication {
 
         System.out.println("Enter IP Adress of Server:");
         serverAdress = scanner.nextLine();
+        if (serverAdress.equals("")){serverAdress = "localhost";}
         while(true) {
             System.out.println("Enter Username:");
             clientID = scanner.nextLine();
@@ -133,6 +135,8 @@ public class Main extends SimpleApplication {
         bulletAppState = new BulletAppState();
         //bulletAppState.setDebugEnabled(true);
         stateManager.attach(bulletAppState);
+        worldNode = new Node("world");
+        rootNode.attachChild(worldNode);
 
         //test data for testing entity creation
         playerData.put("batman007", "130;5;2;5;2");
@@ -164,7 +168,7 @@ public class Main extends SimpleApplication {
         Spatial level = assetManager.loadModel("/models/test_map/map.obj");
         level.setLocalScale(3f);
         level.setShadowMode(RenderQueue.ShadowMode.Receive);
-        rootNode.attachChild(level);
+        worldNode.attachChild(level);
 
         //Level Physics
         RigidBodyControl levelPhys = new RigidBodyControl(0.0f); // static
@@ -300,10 +304,10 @@ public class Main extends SimpleApplication {
             }
             else if (binding.equals("WheelUp")) {
                 selectedInvSlot ++;
-                if (selectedInvSlot == 6){selectedInvSlot = 0;}
+                if (selectedInvSlot == 5){selectedInvSlot = 0;}
             } else if (binding.equals("WheelDown")) {
                 selectedInvSlot --;
-                if (selectedInvSlot < 0){selectedInvSlot = 5;}
+                if (selectedInvSlot < 0){selectedInvSlot = 4;}
             }
         }
     };
@@ -412,7 +416,7 @@ public class Main extends SimpleApplication {
                 newPnode.setLocalScale(0.4f);
                 PlayerUtil.addNameTag(newPnode, PName, assetManager);
                 newP.setShadowMode(RenderQueue.ShadowMode.Cast);
-                rootNode.attachChild(newPnode);
+                worldNode.attachChild(newPnode);
                 playerEntities.put(PName, newPnode);
                 ((Node) newP).getChild("Armature").getControl(AnimComposer.class).setCurrentAction("idle", AnimComposer.DEFAULT_LAYER, true);
                 ((Node) newP).getChild("Armature").getControl(AnimComposer.class).action("run").setSpeed(1.5f);
@@ -433,7 +437,8 @@ public class Main extends SimpleApplication {
                 }
                 if (!n.isAlive()) {
                     if (n.getCaster().equals(clientID) && n.getType().equals("fireball")){
-                        server.send("2" + clientID + "§" + "firemolly§" + getPlayerPosition().x + ":" + getPlayerPosition().y + ":" + getPlayerPosition().z + ";");
+                        server.send("2" + clientID + "§" + "firemolly§" + n.getPosition().x + ":" + n.getPosition().y + ":" + n.getPosition().z + ";");
+                        System.out.println("created molly");
                     }
                     n.removeFromParent();
                     it.remove();
@@ -444,8 +449,13 @@ public class Main extends SimpleApplication {
             Iterator<Stationary> it = stationaries.iterator();
             while (it.hasNext()) {
                 Stationary n = it.next();
+                n.update(tpf);
                 if (n.getParent() == null){
                     rootNode.attachChild(n);
+                }
+                if(!n.isAlive()){
+                    n.removeFromParent();
+                    it.remove();
                 }
             }
         }

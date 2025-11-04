@@ -24,6 +24,12 @@ public class NetworkThread extends WebSocketClient {
             Vector3f dirVec = Main.instance.getPlayerRotation();
             send("2"+Main.clientID+"§"+spell+"§"+origVec.x+":"+origVec.y+":"+origVec.z+";"+dirVec.x+":"+dirVec.y+":"+dirVec.z);
         }
+        else if(spell.equals("fireball")){
+            Vector3f origVec = Main.instance.getPlayerPosition();
+            origVec.y += 1.5f;
+            Vector3f dirVec = Main.instance.getPlayerRotation();
+            send("2"+Main.clientID+"§"+spell+"§"+origVec.x+":"+origVec.y+":"+origVec.z+";"+dirVec.x+":"+dirVec.y+":"+dirVec.z);
+        }
     }
 
     @Override
@@ -80,10 +86,18 @@ public class NetworkThread extends WebSocketClient {
                 Projectile newPlas = new Projectile(Main.instance.getAssetManager(), dataList[0], "plasmaball", origVec, dirVec, 0f, 22f, 100f, 10f);
                 Main.projectiles.add(newPlas);
             }
+            else if (dataList[1].equals("fireball")){
+                String[] origVecParam = paramList[0].split(":");
+                String[] dirVecParam = paramList[1].split(":");
+                Vector3f origVec = new Vector3f(Float.parseFloat(origVecParam[0]), Float.parseFloat(origVecParam[1]), Float.parseFloat(origVecParam[2]));
+                Vector3f dirVec = new Vector3f(Float.parseFloat(dirVecParam[0])+180f,Float.parseFloat(dirVecParam[1]),Float.parseFloat(dirVecParam[2]));
+                Projectile newFire = new Projectile(Main.instance.getAssetManager(), dataList[0], "fireball", origVec, dirVec, -12f, 25f, 100f, 30f);
+                Main.projectiles.add(newFire);
+            }
             else if (dataList[1].equals("firemolly")){
                 String[] posVecParam = paramList[0].split(":");
                 Vector3f posVec = new Vector3f(Float.parseFloat(posVecParam[0]), Float.parseFloat(posVecParam[1]), Float.parseFloat(posVecParam[2]));
-                Stationary newStat = new Stationary(Main.instance.getAssetManager(), "firemolly", posVec, 0f, 10f, 10f);
+                Stationary newStat = new Stationary(Main.instance.getAssetManager(), "firemolly", posVec, 5f, 10f, 10f);
                 Main.stationaries.add(newStat);
             }
         }

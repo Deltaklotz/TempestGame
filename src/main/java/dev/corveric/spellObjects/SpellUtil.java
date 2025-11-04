@@ -7,7 +7,7 @@ public class SpellUtil {
     public SpellUtil(){
         spells.add("none");
         spells.add("plasmaball");
-        //spells.add("fireball");
+        spells.add("fireball");
     }
     public ArrayList<String> getCastable(){
         return spells;
